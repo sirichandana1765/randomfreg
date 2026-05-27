@@ -8,11 +8,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 
 # =========================
-# TITLE
-# =========================
-st.title("🌲 Random Forest Classifier (No Model Files)")
-
-# =========================
 # LOAD DATASET
 # =========================
 data = load_breast_cancer()
@@ -21,7 +16,7 @@ X = pd.DataFrame(data.data, columns=data.feature_names)
 y = data.target
 
 # =========================
-# TRAIN MODEL (INSIDE APP)
+# TRAIN MODEL
 # =========================
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
@@ -39,14 +34,17 @@ model = RandomForestClassifier(
 model.fit(X_train, y_train)
 
 # =========================
-# INPUTS
+# UI
 # =========================
-st.write("Enter Feature Values:")
+st.title("🌲 Random Forest Classification")
+
+st.write("Enter all feature values:")
 
 inputs = []
 
-for i in range(4):   # simple demo (first 4 features only)
-    val = st.number_input(f"Feature {i+1}", value=0.0)
+# 🔥 IMPORTANT: USE ALL FEATURES (30)
+for feature in data.feature_names:
+    val = st.number_input(feature, value=0.0)
     inputs.append(val)
 
 # =========================
@@ -54,7 +52,8 @@ for i in range(4):   # simple demo (first 4 features only)
 # =========================
 if st.button("Predict 🔍"):
 
-    arr = np.array(inputs).reshape(1, -1)
+    arr = np.array(inputs).reshape(1, -1)  # NOW 30 features
+
     arr = scaler.transform(arr)
 
     prediction = model.predict(arr)
