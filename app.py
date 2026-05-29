@@ -1,3 +1,16 @@
+import streamlit as st
+import numpy as np
+import pandas as pd
+
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score
+
+# =========================
+# CUSTOM CSS
+# =========================
 st.markdown("""
 <style>
 
@@ -22,11 +35,6 @@ h1, h2, h3 {
     text-align: center;
 }
 
-/* Input box styling */
-div[data-baseweb="input"] {
-    border-radius: 10px;
-}
-
 /* Button styling */
 .stButton>button {
     background: linear-gradient(90deg, #22c55e, #16a34a);
@@ -41,14 +49,6 @@ div[data-baseweb="input"] {
 
 .stButton>button:hover {
     transform: scale(1.03);
-    background: linear-gradient(90deg, #16a34a, #15803d);
-}
-
-/* Prediction box */
-.success {
-    background: rgba(34, 197, 94, 0.2);
-    padding: 15px;
-    border-radius: 10px;
 }
 
 /* Sidebar */
@@ -59,53 +59,56 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-
-
-import streamlit as st
-import numpy as np
-import pandas as pd
-
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-
 # =========================
 # LOAD DATASET
 # =========================
-data = load_breast_cancer()
+data = fetch_california_housing()
 
 X = pd.DataFrame(data.data, columns=data.feature_names)
 y = data.target
 
 # =========================
-# TRAIN MODEL
+# TRAIN TEST SPLIT
 # =========================
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
+# =========================
+# SCALING
+# =========================
 scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
 
-model = RandomForestClassifier(
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# =========================
+# RANDOM FOREST REGRESSOR
+# =========================
+model = RandomForestRegressor(
     n_estimators=200,
     max_depth=10,
     random_state=42
 )
 
-model.fit(X_train, y_train)
+model.fit(X_train_scaled, y_train)
+
+# =========================
+# MODEL SCORE
+# =========================
+y_pred = model.predict(X_test_scaled)
+
+score = r2_score(y_test, y_pred)
 
 # =========================
 # UI
 # =========================
-st.title("🌲 Random Forest Classification")
+st.title("🌲 Random Forest Regression")
 
-st.write("Enter all feature values:")
+st.write("Enter feature values:")
 
 inputs = []
 
-# 🔥 IMPORTANT: USE ALL FEATURES (30)
 for feature in data.feature_names:
     val = st.number_input(feature, value=0.0)
     inputs.append(val)
@@ -115,13 +118,15 @@ for feature in data.feature_names:
 # =========================
 if st.button("Predict 🔍"):
 
-    arr = np.array(inputs).reshape(1, -1)  # NOW 30 features
+    arr = np.array(inputs).reshape(1, -1)
 
-    arr = scaler.transform(arr)
+    arr_scaled = scaler.transform(arr)
 
-    prediction = model.predict(arr)
+    prediction = model.predict(arr_scaled)
 
-    if prediction[0] == 0:
-        st.success("🟢 Benign (No Cancer)")
-    else:
-        st.error("🔴 Malignant (Cancer)")
+    st.success(f"Predicted House Price: ${prediction[0] * 100000:.2f}")
+
+# =========================
+# SHOW MODEL PERFORMANCE
+# =========================
+st.write(f"### Model R² Score: {score:.2f}")
